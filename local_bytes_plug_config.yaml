@@ -1,0 +1,151 @@
+# These substitutions allow the end user to override certain values
+substitutions:
+  name: "local-bytes-plug-test"
+  friendly_name: Local Bytes Plug Test
+
+esphome:
+  name: "${name}"
+  # Automatically add the mac address to the name
+  # so you can use a single firmware for all devices
+  name_add_mac_suffix: true
+  
+  platform: ESP8266
+  board: esp8285
+
+  # This will allow for (future) project identification,
+  # configuration and updates.
+  project:
+    name: esphome.local-bytes-plug
+    version: "1.0"
+
+# To be able to get logs from the device via serial and api.
+logger:
+
+# API is a requirement of the dashboard import.
+api:
+
+# OTA is required for Over-the-Air updating
+ota:
+
+# This should point to the public location of this yaml file.
+dashboard_import:
+  package_import_url: github:///petheridge/esphome/local_bytes_plug_config.yaml
+
+wifi:
+  # Set up a wifi access point
+  ap:
+    password: "local"
+
+# In combination with the `ap` this allows the user
+# to provision wifi credentials to the device.
+captive_portal:
+
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# Sets up the improv via serial client for Wi-Fi provisioning
+improv_serial:
+
+
+# Enable Web server
+web_server:
+  port: 80
+  
+#Use time from home assistant
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# Text sensors with general information
+text_sensor:
+  - platform: version
+    name: $friendly_name ESPHome Version
+  - platform: wifi_info
+    ip_address:
+      name: $friendly_name IP Address
+    ssid:
+      name: $friendly_name WiFi
+    bssid:
+      name: $friendly_name MAC
+
+sensor:
+  # Uptime sensor
+  - platform: uptime
+    name: $friendly_name Uptime
+  # WiFi Signal sensor
+  - platform: wifi_signal
+    name: $friendly_name WiFi Signal
+    update_interval: 10s
+ 
+# Power sensor function - if available
+  - platform: hlw8012
+    sel_pin:
+      number: GPIO12
+      inverted: true
+    cf_pin: GPIO04
+    cf1_pin: GPIO05
+    change_mode_every: 3
+    update_interval: 3s
+   
+    # Power sensor
+    power:
+      id: power
+      name: $hostname Power
+      unit_of_measurement: W
+      accuracy_decimals: 1
+  
+
+  # Total daily energy sensor
+  - platform: total_daily_energy
+    name: $friendly_name Daily Energy Use
+    power_id: power
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+    unit_of_measurement: kWh
+    
+    
+binary_sensor:
+  # Binary sensor for the button press
+  - platform: gpio
+    name: $friendly_name Button
+    pin:
+      number: GPIO03
+      inverted: true
+    filters:
+      - delayed_off: 500ms
+    on_press:
+      - switch.toggle: relay
+ 
+  - platform: status
+    name: $friendly_name Status
+
+switch:
+  # Switch to restart the plug
+  - platform: restart
+    name: $friendly_name restart
+  # Switch to toggle the relay
+  - platform: gpio
+    id: relay
+    name: $friendly_name Switch
+    pin: GPIO14
+    on_turn_on:
+      - light.turn_on: led
+    on_turn_off:
+      - light.turn_off: led
+
+output:
+  # Relay state led
+  - platform: esp8266_pwm
+    id: state_led
+    pin:
+      number: GPIO13
+      inverted: true
+
+light:
+  # Relay state light
+  - platform: monochromatic
+    output: state_led
+    id: led
