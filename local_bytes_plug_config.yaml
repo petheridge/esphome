@@ -29,7 +29,7 @@ ota:
 
 # This should point to the public location of this yaml file.
 dashboard_import:
-  package_import_url: github:///petheridge/esphome/local_bytes_plug_config.yaml
+  package_import_url: github://petheridge/esphome/local_bytes_plug_config.yaml
 
 wifi:
   # Set up a wifi access point
